@@ -1,0 +1,175 @@
+<main class="layout">
+  <section class="board">
+    <header class="board__header">
+      <div>
+        <p class="board__eyebrow">Today</p>
+        <h1 class="board__title">FocusFlow Planner</h1>
+        <p class="board__subtitle">
+          Capture tasks, organize priorities, and ship work that matters.
+        </p>
+      </div>
+      <div class="board__stats">
+        <div class="stat">
+          <span class="stat__label">Total</span>
+          <span class="stat__value">{{ stats().total }}</span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Active</span>
+          <span class="stat__value">{{ stats().active }}</span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Done</span>
+          <span class="stat__value">{{ stats().completed }}</span>
+        </div>
+      </div>
+    </header>
+
+    <form #taskForm="ngForm" class="task-form" (ngSubmit)="addTask(taskForm)">
+      <div class="task-form__inputs">
+        <div class="field">
+          <label for="title">Task</label>
+          <input
+            id="title"
+            name="title"
+            type="text"
+            placeholder="Write the release notes draft…"
+            [(ngModel)]="draft.title"
+            required
+            minlength="2"
+          />
+        </div>
+        <div class="field">
+          <label for="dueDate">Due date</label>
+          <input
+            id="dueDate"
+            name="dueDate"
+            type="date"
+            [(ngModel)]="draft.dueDate"
+          />
+        </div>
+        <div class="field">
+          <label for="priority">Priority</label>
+          <select
+            id="priority"
+            name="priority"
+            [(ngModel)]="draft.priority"
+          >
+            @for (option of priorities; track option.id) {
+              <option [ngValue]="option.id">{{ option.label }}</option>
+            }
+          </select>
+        </div>
+      </div>
+      <div class="task-form__notes">
+        <label for="notes">Notes</label>
+        <textarea
+          id="notes"
+          name="notes"
+          rows="2"
+          placeholder="Outline context, links, or next steps…"
+          [(ngModel)]="draft.notes"
+        ></textarea>
+      </div>
+      <button type="submit" class="task-form__submit" [disabled]="taskForm.invalid">
+        Add task
+      </button>
+    </form>
+
+    <div class="board__toolbar">
+      <div class="filters">
+        @for (option of filters; track option.id) {
+          <button
+            type="button"
+            class="filters__button"
+            [class.is-active]="filter() === option.id"
+            (click)="updateFilter(option.id)"
+          >
+            {{ option.label }}
+          </button>
+        }
+      </div>
+      <div class="toolbar-right">
+        <label class="sort">
+          <span>Sort</span>
+          <select [value]="sort()" (change)="onSortChange($event)">
+            <option value="created">Recently added</option>
+            <option value="due">Due date</option>
+            <option value="priority">Priority</option>
+          </select>
+        </label>
+        <label class="search">
+          <span class="visually-hidden">Search tasks</span>
+          <input
+            type="search"
+            placeholder="Search…"
+            (input)="onSearchChange($event)"
+            [value]="search()"
+          />
+        </label>
+        <div class="toolbar-actions">
+          <button
+            type="button"
+            class="toolbar-actions__button"
+            (click)="completeAll()"
+            [disabled]="stats().active === 0"
+          >
+            Complete all
+          </button>
+          <button
+            type="button"
+            class="toolbar-actions__button toolbar-actions__button--danger"
+            (click)="clearCompleted()"
+            [disabled]="stats().completed === 0"
+          >
+            Clear completed
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <section class="task-list" aria-live="polite">
+      @if (visibleTasks().length === 0) {
+        <div class="task-list__empty">
+          <h2>No tasks yet</h2>
+          <p>Add your first task or adjust the filters.</p>
+        </div>
+      } @else {
+        @for (task of visibleTasks(); track task.id) {
+          <article class="task-card" [class.task-card--completed]="task.completed">
+            <header class="task-card__header">
+              <label class="task-card__checkbox">
+                <input
+                  type="checkbox"
+                  [checked]="task.completed"
+                  (change)="toggleCompletion(task.id)"
+                  aria-label="Mark {{ task.title }} as {{ task.completed ? 'not done' : 'done' }}"
+                />
+                <span></span>
+              </label>
+              <div class="task-card__meta">
+                <h2>{{ task.title }}</h2>
+                <div class="task-card__tags">
+                  <span class="badge" [attr.data-priority]="task.priority">{{ task.priority }}</span>
+                  @if (task.dueDate) {
+                    <span class="badge badge--muted">Due {{ task.dueDate | date: 'MMM d' }}</span>
+                  }
+                </div>
+              </div>
+              <button
+                type="button"
+                class="task-card__delete"
+                (click)="removeTask(task.id)"
+                aria-label="Delete {{ task.title }}"
+              >
+                ×
+              </button>
+            </header>
+            @if (task.notes) {
+              <p class="task-card__notes">{{ task.notes }}</p>
+            }
+          </article>
+        }
+      }
+    </section>
+  </section>
+</main>
